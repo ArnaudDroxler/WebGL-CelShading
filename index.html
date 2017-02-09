@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>WebGl Ray-Tracing</title>
+        <link rel="stylesheet" href="./css/stylesheet.css">
+            <script type="text/javascript" src="./js/gl-matrix.js"></script>
+            <script type="text/javascript" src="./js/webgl-debug.js"></script>
+            <script type="text/javascript" src="./js/webgl-utils.js"></script>
+            <script type="text/javascript" src="js/celShading.js"></script>
+            <script id="outline-shader-vs" type="x-shader/x-vertex">
+                attribute vec3 aVertexPosition;
+                attribute vec3 aVertexNormal;
+                uniform mat4 uPMatrix;
+                uniform mat4 uMVMatrix;
+                varying vec3 vNormal;
+                uniform float uOffset;
+
+                void main(void) {
+                    vec4 vertex = vec4(aVertexPosition + aVertexNormal * uOffset, 1.0);
+                    gl_Position = uPMatrix * uMVMatrix * vertex;
+                }
+            </script>
+            <script id="outline-shader-fs" type="x-shader/x-fragment">
+                precision highp float;
+                	varying vec3 vNormal;
+                	uniform vec3 uOutLineColor;
+                void main(void) {
+                    gl_FragColor = vec4(uOutLineColor,1.0);
+                }
+            </script>
+            <script id="cel-shader-vs" type="x-shader/x-vertex">
+                    attribute vec3 aVertexPosition;
+                    attribute vec3 aVertexNormal;
+                    uniform mat4 uPMatrix;
+                    uniform mat4 uMVMatrix;
+                    varying vec3 v_normal;
+                    varying vec3 v_directionToLight;
+                    varying vec3 v_directionToCamera;
+                    const vec3 lightPos = vec3(10.0,10.0,30.0);
+                    const vec3 cameraPos = vec3(0.0,0.0,40.0);
+
+                    void main(void) {
+                        v_normal = aVertexNormal;
+                        vec3 vecToLight = lightPos - aVertexPosition;
+                        v_directionToCamera = normalize(cameraPos - aVertexPosition);
+                        v_directionToLight = normalize(vecToLight);
+                        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);;
+                    }
+
+                </script>
+            <script id="cel-shader-fs" type="x-shader/x-fragment">
+                    precision highp float;
+                    const vec3 u_baseColor = vec3(1.0,1.0,0.0);
+                    varying vec3 v_normal;
+                    varying vec3 v_directionToLight;
+                    varying vec3 v_directionToCamera;
+                    vec4 color;
+
+                    float diffuseSimple(vec3 L, vec3 N){
+                       return clamp(dot(L,N),0.0,1.0);
+                    }
+
+                    float specularSimple(vec3 L,vec3 N,vec3 H){
+                       if(dot(N,L)>0.0){
+                          return pow(clamp(dot(H,N),0.0,1.0),64.0);
+                       }
+                       return 0.0;
+                    }
+
+                    void main(void) {
+                        color = vec4(1.0);
+                        vec3 halfVector = normalize( v_directionToLight + v_directionToCamera );
+                       float iambi = 0.1;
+                       float idiff = diffuseSimple(v_directionToLight, v_normal);
+                       float ispec = specularSimple(v_directionToLight,v_normal, halfVector);
+                       float intensity = iambi + idiff + ispec;
+
+                       // quantize intensity for cel shading
+                       float shadeIntensity = ceil(intensity * 4.0)/ 4.0;
+
+                       // use base colo
+                       color.xyz = u_baseColor * shadeIntensity ;
+                       gl_FragColor = color;
+                    }
+                </script>
+    </head>
+    <body>
+      <h1>WebGL Cel Shading</h1>
+      <p>
+      </p>
+
+      <div id="main">
+        <canvas id="glcanvas" width="1024" height="768"></canvas>
+        <div id="error"><noscript>Please enable JavaScript.</noscript></div>
+      </div>
+  </body>
+
+</html>
