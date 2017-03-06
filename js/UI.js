@@ -1,3 +1,6 @@
-/**
- * Created by Arnaud on 15.02.2017.
- */
+
+class UI{
+    constructor(){
+
+    }
+}

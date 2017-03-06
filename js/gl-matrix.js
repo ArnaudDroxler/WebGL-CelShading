@@ -3655,7 +3655,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * with the still experiemental WebVR API.
 	 *
 	 * @param {mat4} out mat4 frustum matrix will be written into
-	 * @param {Object} fov Object containing the following values: upDegrees, downDegrees, leftDegrees, rightDegrees
+	 * @param {Teapot} fov Teapot containing the following values: upDegrees, downDegrees, leftDegrees, rightDegrees
 	 * @param {number} near Near bound of the frustum
 	 * @param {number} far Far bound of the frustum
 	 * @returns {mat4} out
@@ -5300,7 +5300,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param {Number} offset Number of elements to skip at the beginning of the array
 	 * @param {Number} count Number of vec3s to iterate over. If 0 iterates over entire array
 	 * @param {Function} fn Function to call for each vector in the array
-	 * @param {Object} [arg] additional argument to pass to fn
+	 * @param {Teapot} [arg] additional argument to pass to fn
 	 * @returns {Array} a
 	 * @function
 	 */
@@ -5937,7 +5937,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param {Number} offset Number of elements to skip at the beginning of the array
 	 * @param {Number} count Number of vec4s to iterate over. If 0 iterates over entire array
 	 * @param {Function} fn Function to call for each vector in the array
-	 * @param {Object} [arg] additional argument to pass to fn
+	 * @param {Teapot} [arg] additional argument to pass to fn
 	 * @returns {Array} a
 	 * @function
 	 */
@@ -6532,7 +6532,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param {Number} offset Number of elements to skip at the beginning of the array
 	 * @param {Number} count Number of vec2s to iterate over. If 0 iterates over entire array
 	 * @param {Function} fn Function to call for each vector in the array
-	 * @param {Object} [arg] additional argument to pass to fn
+	 * @param {Teapot} [arg] additional argument to pass to fn
 	 * @returns {Array} a
 	 * @function
 	 */

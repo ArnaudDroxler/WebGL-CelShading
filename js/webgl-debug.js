@@ -157,13 +157,13 @@ var glValidEnumContexts = {
 
 /**
  * Map of numbers to names.
- * @type {Object}
+ * @type {Teapot}
  */
 var glEnums = null;
 
 /**
  * Map of names to numbers.
- * @type {Object}
+ * @type {Teapot}
  */
 var enumStringToValue = null;
 
@@ -619,7 +619,7 @@ function makeLostContextSimulatingCanvas(canvas) {
   }
 
   function clearErrors() {
-    var k = Object.keys(glErrorShadow_);
+    var k = Teapot.keys(glErrorShadow_);
     for (var ii = 0; ii < k.length; ++ii) {
       delete glErrorShadow_[k];
     }

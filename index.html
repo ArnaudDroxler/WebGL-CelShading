@@ -3,12 +3,16 @@
     <head>
         <meta charset="utf-8">
         <title>WebGl Ray-Tracing</title>
-        <link rel="stylesheet" href="./css/stylesheet.css">
+        <!--<link rel="stylesheet" href="./css/stylesheet.css">-->
             <script type="text/javascript" src="./js/gl-matrix.js"></script>
             <script type="text/javascript" src="./js/webgl-debug.js"></script>
             <script type="text/javascript" src="./js/webgl-utils.js"></script>
-            <script type="text/javascript" src="js/Object.js"></script>
             <script type="text/javascript" src="js/celShading.js"></script>
+            <script type="text/javascript" src="js/Scene.js"></script>
+            <!--<script type="text/javascript" src="js/Controller.js"></script>-->
+            <script type="text/javascript" src="js/Skybox.js"></script>
+            <script type="text/javascript" src="js/Plan.js"></script>
+            <script type="text/javascript" src="js/Teapot.js"></script>
             <script id="outline-shader-vs" type="x-shader/x-vertex">
                 attribute vec3 aVertexPosition;
                 attribute vec3 aVertexNormal;
@@ -16,7 +20,6 @@
                 uniform mat4 uMVMatrix;
                 varying vec3 vNormal;
                 uniform float uOffset;
-
                 void main(void) {
                     vec4 vertex = vec4(aVertexPosition + aVertexNormal * uOffset, 1.0);
                     gl_Position = uPMatrix * uMVMatrix * vertex;
@@ -31,31 +34,43 @@
                 }
             </script>
             <script id="cel-shader-vs" type="x-shader/x-vertex">
-                    attribute vec3 aVertexPosition;
-                    attribute vec3 aVertexNormal;
-                    uniform mat4 uPMatrix;
-                    uniform mat4 uMVMatrix;
-                    varying vec3 v_normal;
-                    varying vec3 v_directionToLight;
-                    varying vec3 v_directionToCamera;
-                    const vec3 lightPos = vec3(10.0,10.0,30.0);
-                    const vec3 cameraPos = vec3(0.0,0.0,40.0);
+                attribute vec3 aVertexPosition;
+                attribute vec3 aVertexNormal;
+                //attribute vec2 aTextureCoord;
 
-                    void main(void) {
-                        v_normal = aVertexNormal;
-                        vec3 vecToLight = lightPos - aVertexPosition;
-                        v_directionToCamera = normalize(cameraPos - aVertexPosition);
-                        v_directionToLight = normalize(vecToLight);
-                        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);;
-                    }
+                uniform mat4 uPMatrix;
+                uniform mat4 uMVMatrix;
+                uniform mat3 uNMatrix;
 
-                </script>
+                uniform vec3 uLightPos;
+
+                varying vec3 vNormal;
+                varying vec3 vDirectionToLight;
+                varying vec3 vDirectionToCamera;
+                //varying vec2 vTextureCoord;
+
+                void main(void) {
+                    vec4 vertex = uMVMatrix * vec4(aVertexPosition, 1.0);
+                    vNormal = uNMatrix * aVertexNormal;
+                    //vTextureCoord = aTextureCoord;
+                    vec3 vecToLight = uLightPos - vertex.xyz;
+                    vDirectionToCamera = normalize(-vertex.xyz);
+                    vDirectionToLight = normalize(vecToLight);
+                    gl_Position = uPMatrix * vertex;
+                }
+
+            </script>
             <script id="cel-shader-fs" type="x-shader/x-fragment">
                     precision highp float;
-                    const vec3 u_baseColor = vec3(1.0,1.0,0.0);
-                    varying vec3 v_normal;
-                    varying vec3 v_directionToLight;
-                    varying vec3 v_directionToCamera;
+                    uniform vec3 uCelColor;
+                    uniform vec3 uLightColor;
+                    //uniform bool uCelShading;
+                    //uniform sampler2D uTexture;
+
+                    varying vec3 vNormal;
+                    varying vec3 vDirectionToLight;
+                    varying vec3 vDirectionToCamera;
+                    //varying vec2 vTextureCoord;
                     vec4 color;
 
                     float diffuseSimple(vec3 L, vec3 N){
@@ -64,25 +79,107 @@
 
                     float specularSimple(vec3 L,vec3 N,vec3 H){
                        if(dot(N,L)>0.0){
-                          return pow(clamp(dot(H,N),0.0,1.0),64.0);
+                          return pow(clamp(dot(H,N),0.0,1.0),32.0);
                        }
                        return 0.0;
                     }
 
                     void main(void) {
                         color = vec4(1.0);
-                        vec3 halfVector = normalize( v_directionToLight + v_directionToCamera );
-                       float iambi = 0.1;
-                       float idiff = diffuseSimple(v_directionToLight, v_normal);
-                       float ispec = specularSimple(v_directionToLight,v_normal, halfVector);
-                       float intensity = iambi + idiff + ispec;
+                        vec3 halfVector = normalize( vDirectionToLight + vDirectionToCamera );
+                       float iambi = 0.0;
+                       float idiff = diffuseSimple(vDirectionToLight, vNormal);
+                       //vec3 reflet = reflect(-vDirectionToLight,vNormal);
+                       //float ispec = pow(max(dot(reflet, vDirectionToCamera), 0.0), 4.0);
+                       float ispec = specularSimple(vDirectionToLight,vNormal, halfVector);
+                       float intensity = ispec + idiff + iambi;
 
-                       // quantize intensity for cel shading
-                       float shadeIntensity = ceil(intensity * 4.0)/ 4.0;
+                            intensity = ceil(intensity * 2.0)/ 2.0;
 
-                       // use base colo
-                       color.xyz = u_baseColor * shadeIntensity ;
+                        //color = texture2D(uTexture, vec2(vTextureCoord.s, vTextureCoord.t));
+
+                       color.xyz *= uCelColor * intensity * uLightColor;
                        gl_FragColor = color;
+                    }
+                </script>
+                <script id="skybox-shader-vs"  type="x-shader/x-vertex">
+                     uniform mat4 uPMatrix;
+                     uniform mat4 uMVMatrix;
+                     attribute vec3 aCoords;
+                     varying vec3 vCoords;
+                     void main() {
+                        vCoords = aCoords;
+                        gl_Position = uPMatrix * uMVMatrix * vec4(aCoords,1.0);;
+
+                     }
+                </script>
+                <script id="skybox-shader-fs"  type="x-shader/x-fragment">
+                     precision mediump float;
+                     varying vec3 vCoords;
+                     uniform samplerCube uSkybox;
+                     void main() {
+                          gl_FragColor = textureCube(uSkybox, vCoords);
+                     }
+                </script>
+        <script id="plan-shader-vs" type="x-shader/x-vertex">
+                attribute vec3 aVertexPosition;
+                attribute vec3 aVertexNormal;
+
+                uniform mat4 uPMatrix;
+                uniform mat4 uMVMatrix;
+                uniform mat3 uNMatrix;
+
+                uniform vec3 uLightPos;
+
+                varying vec3 vNormal;
+                varying vec3 vDirectionToLight;
+                varying vec3 vDirectionToCamera;
+
+                void main(void) {
+                    vec4 vertex = uMVMatrix * vec4(aVertexPosition, 1.0);
+                    vec3 vecToLight = uLightPos - vertex.xyz;
+                    vNormal = uNMatrix * aVertexNormal;
+                    vDirectionToCamera = normalize(-vertex.xyz);
+                    vDirectionToLight = normalize(vecToLight);
+                    gl_Position = uPMatrix * vertex;
+                }
+
+            </script>
+        <script id="plan-shader-fs" type="x-shader/x-fragment">
+                    precision highp float;
+
+                    uniform vec3 uPlanColor;
+                    uniform vec3 uLightColor;
+
+                    varying vec3 vNormal;
+                    varying vec3 vDirectionToLight;
+                    varying vec3 vDirectionToCamera;
+
+                    vec4 color;
+
+                    float diffuseSimple(vec3 L, vec3 N){
+                       return clamp(dot(L,N),0.0,1.0);
+                    }
+
+                    float specularSimple(vec3 L,vec3 N,vec3 H){
+                       if(dot(N,L)>0.0){
+                          return pow(clamp(dot(H,N),0.0,1.0),32.0);
+                       }
+                       return 0.0;
+                    }
+
+                    void main(void) {
+                        color = vec4(1.0);
+                        vec3 halfVector = normalize( vDirectionToLight + vDirectionToCamera );
+                        float iambi = 0.0;
+                        float idiff = diffuseSimple(vDirectionToLight, vNormal);
+                        vec3 reflet = reflect(-vDirectionToLight,vNormal);
+                        float ispec = pow(max(dot(reflet, vDirectionToCamera), 0.0), 4.0);
+                        //float ispec = specularSimple(vDirectionToLight,vNormal, halfVector);
+                        float intensity = ispec + idiff + iambi;
+
+                        color.xyz *= uPlanColor * intensity * uLightColor;
+                        gl_FragColor = color;
                     }
                 </script>
     </head>
@@ -94,7 +191,12 @@
       <div id="main">
         <canvas id="glcanvas" width="1024" height="768"></canvas>
         <div id="error"><noscript>Please enable JavaScript.</noscript></div>
+          <!--<h2>Interaction</h2>
+          <p>
+              <input type="checkbox" name=celShading"" id="celShading" checked="true" onchange="activeCelShading(this)" >Cel Shading
+          </p>-->
       </div>
+
   </body>
 
 </html>
