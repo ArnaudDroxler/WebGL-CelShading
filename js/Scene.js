@@ -23,7 +23,7 @@ class Scene{
     }
 
     drawScene(){
-        console.log("draw Call");
+        //console.log("draw Call");
         this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
         this.gl.enable(this.gl.DEPTH_TEST);
@@ -36,8 +36,9 @@ class Scene{
         mat4.identity(this.mvMatrix);
 
         this.skybox.draw(this.mvMatrix,this.pMatrix);
-        
-        mat4.translate(this.mvMatrix, this.mvMatrix, [0.0, 0.0, -40.0]);
+
+        mat4.translate(this.mvMatrix, this.mvMatrix, [0.0, -5.0, -45.0]);
+        mat4.rotateX(this.mvMatrix, this.mvMatrix, 0.3);
 
         this.plan.draw(this.mvMatrix,this.pMatrix);
 

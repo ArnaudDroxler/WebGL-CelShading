@@ -143,7 +143,10 @@ class Teapot {
     }
 
     animate() {
-        this.i += 0.01;
+        this.i += 1;
+        if(this.i == 620){
+            this.i = 0;
+        }
     }
 
     draw(mvMatrix, pMatrix) {
@@ -151,8 +154,7 @@ class Teapot {
             mat4.identity(this.mvMatrix);
             mat4.multiply(this.mvMatrix, this.mvMatrix, mvMatrix);
             mat4.translate(this.mvMatrix, this.mvMatrix, [0.0, 0.0, 0.0]);
-            mat4.rotateY(this.mvMatrix, this.mvMatrix, this.i);
-
+            mat4.rotateY(this.mvMatrix, this.mvMatrix, this.i*0.01);
 
             mat3.normalFromMat4(this.nMatrix, this.mvMatrix);
 
