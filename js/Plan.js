@@ -43,6 +43,7 @@ class Plan {
         this.prg.pMatrixUniform = this.gl.getUniformLocation(this.prg, 'uPMatrix');
         this.prg.mvMatrixUniform = this.gl.getUniformLocation(this.prg, 'uMVMatrix');
         this.prg.nMatrixUniform = this.gl.getUniformLocation(this.prg, 'uNMatrix');
+        this.prg.viewPositionUniform = this.gl.getUniformLocation(this.prg, 'uViewPos');
         this.prg.lightPosUniform = this.gl.getUniformLocation(this.prg, 'uLightPos');
         this.prg.lightColorUniform = this.gl.getUniformLocation(this.prg, 'uLightColor');
         this.prg.planColorUniform = this.gl.getUniformLocation(this.prg, 'uPlanColor');
@@ -105,6 +106,7 @@ class Plan {
             this.gl.uniform3fv(this.prg.planColorUniform, PLANCOLOR);
             this.gl.uniform3fv(this.prg.lightPosUniform, LIGHTPOS);
             this.gl.uniform3fv(this.prg.lightColorUniform, LIGHTCOLOR);
+            this.gl.uniform3fv(this.prg.viewPositionUniform, [0.0,0.0,0.0]);
 
             this.gl.uniformMatrix4fv(this.prg.pMatrixUniform, false, pMatrix);
             this.gl.uniformMatrix4fv(this.prg.mvMatrixUniform, false, this.mvMatrix);

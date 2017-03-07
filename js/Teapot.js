@@ -74,6 +74,7 @@ class Teapot {
         this.prgCel.pMatrixUniform = this.gl.getUniformLocation(this.prgCel, 'uPMatrix');
         this.prgCel.mvMatrixUniform = this.gl.getUniformLocation(this.prgCel, 'uMVMatrix');
         this.prgCel.nMatrixUniform = this.gl.getUniformLocation(this.prgCel, 'uNMatrix');
+        this.prgCel.viewPositionUniform = this.gl.getUniformLocation(this.prgCel, 'uViewPos');
         this.prgCel.lightPosUniform = this.gl.getUniformLocation(this.prgCel, 'uLightPos');
         this.prgCel.lightColorUniform = this.gl.getUniformLocation(this.prgCel, 'uLightColor');
         this.prgCel.celColorUniform = this.gl.getUniformLocation(this.prgCel, 'uCelColor');
@@ -188,6 +189,8 @@ class Teapot {
             this.gl.uniform3fv(this.prgCel.lightPosUniform, LIGHTPOS);
             this.gl.uniform3fv(this.prgCel.lightColorUniform, LIGHTCOLOR);
             this.gl.uniform3fv(this.prgCel.celColorUniform, CELCOLOR);
+            this.gl.uniform3fv(this.prgCel.viewPositionUniform, [0.0,0.0,0.0]);
+
             //gl.uniform1i(this.prgCel.celShadingUniform, celShading);
 
 

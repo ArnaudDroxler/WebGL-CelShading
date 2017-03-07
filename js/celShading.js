@@ -1,12 +1,12 @@
 
-const LIGHTPOS = vec3.fromValues(30.0,30.0,-10.0);
+const LIGHTPOS = vec3.fromValues(30.0,30.0,10.0);
 const LIGHTCOLOR = vec3.fromValues(1.0,1.0,1.0);
 
 const OFFSET = 0.3;
 const OUTLINECOLOR = vec3.fromValues(0.0,0.0,0.0);
 const CELCOLOR = vec3.fromValues(1.0,0.6,0.1);
 
-const PLANCOLOR = vec3.fromValues(0.8,0.8,0.8);
+const PLANCOLOR = vec3.fromValues(0.9,0.9,0.9);
 
 window.onload = function() {
     var canvas = document.getElementById('glcanvas');

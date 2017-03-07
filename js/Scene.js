@@ -4,7 +4,6 @@ class Scene{
 
         this.gl = gl;
         this.canvas = canvas;
-        this.objects = [];
         this.skybox = new Skybox("textures/skybox/",this.gl);
         this.teapot = new Teapot("model/teapot.json",this.gl);
         this.plan = new Plan("model/plan.json",this.gl);
