@@ -110,7 +110,7 @@ class Skybox{
         {
             this.textures[j] = new Image();
             this.textures[j].onload = this.textureLoading.bind(this);
-            this.textures[j].src = this.path + j + ".png";
+            this.textures[j].src = this.path + j + ".jpg";
         }
     }
 
