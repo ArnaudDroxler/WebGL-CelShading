@@ -14,8 +14,16 @@ window.onload = function() {
 
     try {
         gl = WebGLDebugUtils.makeDebugContext(canvas.getContext("webgl"));
-        gl.viewportWidth = canvas.width;
-        gl.viewportHeight = canvas.height;
+
+        var displayWidth = document.getElementById('container').clientWidth;
+        var displayHeight = document.getElementById('container').clientHeight;
+
+        console.log(displayWidth +" "+displayHeight );
+
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+        gl.viewportWidth = displayWidth;
+        gl.viewportHeight = displayHeight;
     }
     catch(e) {
     }
@@ -26,6 +34,7 @@ window.onload = function() {
     var scene = new Scene(gl, canvas);
 
 };
+
 
 function degToRad(degrees) {
     return (degrees * Math.PI / 180.0);

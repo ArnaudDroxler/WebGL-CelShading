@@ -17,6 +17,7 @@ class Scene{
     tick() {
         var self = this;
         requestAnimFrame(function() { self.tick(); } );
+        this.resizeCanvas();
         this.teapot.animate();
         this.drawScene();
     }
@@ -44,6 +45,19 @@ class Scene{
         this.teapot.draw(this.mvMatrix,this.pMatrix);
 
     }
+
+    resizeCanvas() {
+        var displayWidth = document.getElementById('container').clientWidth;
+        var displayHeight = document.getElementById('container').clientHeight;
+
+        if (this.gl.viewportWidth != displayWidth || this.gl.viewportHeight != displayHeight) {
+            this.gl.viewportWidth = displayWidth;
+            this.gl.viewportHeight = displayHeight;
+            this.canvas.width = displayWidth;
+            this.canvas.height = displayHeight;
+    }
+}
+
 
 
 

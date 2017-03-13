@@ -145,7 +145,7 @@ class Teapot {
 
     animate() {
         this.i += 1;
-        if(this.i == 620){
+        if(this.i == 630){
             this.i = 0;
         }
     }
