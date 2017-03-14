@@ -4,20 +4,22 @@ class Shadow {
 
         this.gl = gl;
 
-        this.vertexBuffer = null;
-        this.indexBuffer = null;
-        this.normalBuffer = null;
-        this.numberIndex = 0;
-
         this.prg = null;
 
-        this.readyToDraw = false;
+        this.shadowWidth = 1024;
+        this.shadowHeight = 1024;
 
-        this.mvMatrix = mat4.create();
-        this.nMatrix = mat3.create();
+        this.depthMapFrameBuffer = null;
+        this.depthMapTexture = null;
 
+        this.lightProjection = mat4.create();
+        this.lightView = mat4.create();
+        this.lightSpaceMatrix = mat4.create();
+
+        this.initBuffer();
         this.initProgramme();
-        this.load();
+        this.initMatix();
+
     }
 
     initProgramme() {
@@ -50,55 +52,31 @@ class Shadow {
 
     }
 
-    load() {
-        var me = this;
-        var request = new XMLHttpRequest();
-        console.info('Requesting ' + this.fileName);
-        request.open("GET", this.fileName);
-        request.onreadystatechange = function () {
-            if (request.readyState == 4) {
+    initBuffer(){
 
-                if (request.status == 404) {
-                    console.info(this.fileName + ' does not exist');
-                }
-                else {
-                    me.handleJSONModel(JSON.parse(request.responseText));
-                }
-            }
-        };
-        request.send();
+        this.depthMapFrameBuffer = this.gl.createFramebuffer();
+        this.gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthMapFrameBuffer);
+
+        this.depthMapTexture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapTexture);
+
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.DEPTH_COMPONENT, this.shadowWidth, this.shadowHeight, 0, this.gl.DEPTH_COMPONENT, this.gl.FLOAT, null);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+
+        this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER,this.gl.DEPTH_ATTACHMENT, this.gl.TEXTURE_2D, this.depthMapTexture,0 );
+
     }
 
-    handleJSONModel(obj) {
-        this.numberIndex = obj.indices.length;
-
-        this.vertexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(obj.vertices), this.gl.STATIC_DRAW);
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-
-        this.normalBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(obj.normals), this.gl.STATIC_DRAW);
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-
-        this.indexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(obj.indices), this.gl.STATIC_DRAW);
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-
-        this.readyToDraw = true;
+    initMatix(){
+        mat4.ortho(this.lightProjection,-10.0,10.0,-10.0,10.0,1.0,7.5);
+        mat4.lookAt(this.lightView,LIGHTPOS,[0.0,0.0,0.0],[0.0,1.0,0.0]);
+        mat4.multiply(this.lightSpaceMatrix,this.lightProjection,this.lightView);
     }
 
-
-    draw(mvMatrix, pMatrix) {
-        if (this.readyToDraw) {
-
-            mat4.identity(this.mvMatrix);
-            mat4.multiply(this.mvMatrix, this.mvMatrix, mvMatrix);
-            mat4.translate(this.mvMatrix, this.mvMatrix, [0.0, -10.0, 0.0]);
-
-            mat3.normalFromMat4(this.nMatrix, this.mvMatrix);
+    draw() {
 
             this.gl.useProgram(this.prg);
 
@@ -120,7 +98,5 @@ class Shadow {
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 
             this.gl.drawElements(this.gl.TRIANGLES, this.numberIndex, this.gl.UNSIGNED_SHORT, 0);
-        }
-
     }
 }
