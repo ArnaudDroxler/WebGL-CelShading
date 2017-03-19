@@ -8,32 +8,109 @@
             <script type="text/javascript" src="./js/webgl-debug.js"></script>
             <script type="text/javascript" src="./js/webgl-utils.js"></script>
             <script type="text/javascript" src="js/celShading.js"></script>
-            <script type="text/javascript" src="js/Scene.js"></script>
-            <!--<script type="text/javascript" src="js/Controller.js"></script>-->
-            <script type="text/javascript" src="js/Skybox.js"></script>
-            <script type="text/javascript" src="js/NomaleShadingObject.js"></script>
-            <script type="text/javascript" src="js/CelShadingObject.js"></script>
-            <script id="outline-shader-vs" type="x-shader/x-vertex">
+        <!-- <script type="text/javascript" src="js/Scene.js"></script>-->
+        <!--<script type="text/javascript" src="js/Controller.js"></script>-->
+        <!--<script type="text/javascript" src="js/Skybox.js"></script>-->
+        <!--<script type="text/javascript" src="js/NomaleShadingObject.js"></script>-->
+        <!--<script type="text/javascript" src="js/CelShadingObject.js"></script>-->
+        <!--<script type="text/javascript" src="js/Shadow.js"></script>-->
+        <script id="outline-shader-vs" type="x-shader/x-vertex">
+            attribute vec3 aVertexPosition;
+            attribute vec3 aVertexNormal;
+            uniform mat4 uPMatrix;
+            uniform mat4 uMVMatrix;
+            uniform float uOffset;
+            void main(void) {
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition + aVertexNormal * uOffset, 1.0);
+            }
+        </script>
+        <script id="outline-shader-fs" type="x-shader/x-fragment">
+            precision highp float;
+                uniform vec3 uOutLineColor;
+            void main(void) {
+                gl_FragColor = vec4(uOutLineColor,1.0);
+            }
+        </script>
+        <script id="cel-shader-vs" type="x-shader/x-vertex">
+            attribute vec3 aVertexPosition;
+            attribute vec3 aVertexNormal;
+            //attribute vec2 aTextureCoord;
+
+            uniform mat4 uPMatrix;
+            uniform mat4 uMVMatrix;
+            uniform mat3 uNMatrix;
+
+            varying vec3 vNormal;
+            varying vec3 vVertex;
+            //varying vec2 vTextureCoord;
+
+            void main(void) {
+                vVertex = vec3(uMVMatrix * vec4(aVertexPosition, 1.0));
+                vNormal = uNMatrix * aVertexNormal;
+                //vTextureCoord = aTextureCoord;
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            }
+
+        </script>
+        <script id="cel-shader-fs" type="x-shader/x-fragment">
+            precision highp float;
+            uniform vec3 uCelColor;
+            uniform vec3 uLightColor;
+            uniform vec3 uViewPos;
+            uniform vec3 uLightPos;
+
+            varying vec3 vNormal;
+            varying vec3 vVertex;
+
+            //uniform bool uCelShading;
+            //uniform sampler2D uTexture;
+            //varying vec2 vTextureCoord;
+
+            void main(void) {
+
+                float ambient = 0.1;
+
+                vec3 normal = normalize(vNormal);
+                vec3 lightDir = normalize(uLightPos - vVertex);
+                float diffuse = max(dot(normal, lightDir), 0.0);
+
+                float specularStrength = 0.5;
+                vec3 viewDir = normalize(uViewPos - vVertex);
+                vec3 reflectDir = reflect(-lightDir, normal);
+                float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+
+                float lightIntensity = ambient + diffuse + specular;
+
+                lightIntensity = ceil(lightIntensity*4.0)/4.0;
+
+                vec3 color = uCelColor * uLightColor * lightIntensity;
+
+                gl_FragColor = vec4(color, 1.0);
+            }
+
+            </script>
+            <script id="skybox-shader-vs"  type="x-shader/x-vertex">
+                 uniform mat4 uPMatrix;
+                 uniform mat4 uMVMatrix;
+                 attribute vec3 aCoords;
+                 varying vec3 vCoords;
+                 void main() {
+                    vCoords = aCoords;
+                    gl_Position = uPMatrix * uMVMatrix * vec4(aCoords,1.0);;
+
+                 }
+            </script>
+            <script id="skybox-shader-fs"  type="x-shader/x-fragment">
+                 precision mediump float;
+                 varying vec3 vCoords;
+                 uniform samplerCube uSkybox;
+                 void main() {
+                      gl_FragColor = textureCube(uSkybox, vCoords);
+                 }
+            </script>
+            <script id="plan-shader-vs" type="x-shader/x-vertex">
                 attribute vec3 aVertexPosition;
                 attribute vec3 aVertexNormal;
-                uniform mat4 uPMatrix;
-                uniform mat4 uMVMatrix;
-                uniform float uOffset;
-                void main(void) {
-                    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition + aVertexNormal * uOffset, 1.0);
-                }
-            </script>
-            <script id="outline-shader-fs" type="x-shader/x-fragment">
-                precision highp float;
-                	uniform vec3 uOutLineColor;
-                void main(void) {
-                    gl_FragColor = vec4(uOutLineColor,1.0);
-                }
-            </script>
-            <script id="cel-shader-vs" type="x-shader/x-vertex">
-                attribute vec3 aVertexPosition;
-                attribute vec3 aVertexNormal;
-                //attribute vec2 aTextureCoord;
 
                 uniform mat4 uPMatrix;
                 uniform mat4 uMVMatrix;
@@ -41,29 +118,22 @@
 
                 varying vec3 vNormal;
                 varying vec3 vVertex;
-                //varying vec2 vTextureCoord;
 
                 void main(void) {
                     vVertex = vec3(uMVMatrix * vec4(aVertexPosition, 1.0));
                     vNormal = uNMatrix * aVertexNormal;
-                    //vTextureCoord = aTextureCoord;
                     gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
                 }
-
             </script>
-            <script id="cel-shader-fs" type="x-shader/x-fragment">
+            <script id="plan-shader-fs" type="x-shader/x-fragment">
                 precision highp float;
-                uniform vec3 uCelColor;
+                uniform vec3 uPlanColor;
                 uniform vec3 uLightColor;
                 uniform vec3 uViewPos;
                 uniform vec3 uLightPos;
 
                 varying vec3 vNormal;
                 varying vec3 vVertex;
-
-                //uniform bool uCelShading;
-                //uniform sampler2D uTexture;
-                //varying vec2 vTextureCoord;
 
                 void main(void) {
 
@@ -80,94 +150,47 @@
 
                     float lightIntensity = ambient + diffuse + specular;
 
-                    lightIntensity = ceil(lightIntensity*4.0)/4.0;
-
-                    vec3 color = uCelColor * uLightColor * lightIntensity;
+                    vec3 color = uPlanColor * uLightColor * lightIntensity;
 
                     gl_FragColor = vec4(color, 1.0);
                 }
+            </script>
+            <script id="shadow-shader-vs" type="x-shader/x-vertex">
 
-                </script>
-                <script id="skybox-shader-vs"  type="x-shader/x-vertex">
-                     uniform mat4 uPMatrix;
-                     uniform mat4 uMVMatrix;
-                     attribute vec3 aCoords;
-                     varying vec3 vCoords;
-                     void main() {
-                        vCoords = aCoords;
-                        gl_Position = uPMatrix * uMVMatrix * vec4(aCoords,1.0);;
+                attribute vec3 aVertexPosition;
+                uniform mat4 uLightSpaceMatrix;
+                uniform mat4 uModel;
+                varying float vDepth;
 
-                     }
-                </script>
-                <script id="skybox-shader-fs"  type="x-shader/x-fragment">
-                     precision mediump float;
-                     varying vec3 vCoords;
-                     uniform samplerCube uSkybox;
-                     void main() {
-                          gl_FragColor = textureCube(uSkybox, vCoords);
-                     }
-                </script>
-                <script id="plan-shader-vs" type="x-shader/x-vertex">
-                    attribute vec3 aVertexPosition;
-                    attribute vec3 aVertexNormal;
-
-                    uniform mat4 uPMatrix;
-                    uniform mat4 uMVMatrix;
-                    uniform mat3 uNMatrix;
-
-                    varying vec3 vNormal;
-                    varying vec3 vVertex;
-
-                    void main(void) {
-                        vVertex = vec3(uMVMatrix * vec4(aVertexPosition, 1.0));
-                        vNormal = uNMatrix * aVertexNormal;
-                        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-                    }
-                </script>
-                <script id="plan-shader-fs" type="x-shader/x-fragment">
-                    precision highp float;
-                    uniform vec3 uPlanColor;
-                    uniform vec3 uLightColor;
-                    uniform vec3 uViewPos;
-                    uniform vec3 uLightPos;
-
-                    varying vec3 vNormal;
-                    varying vec3 vVertex;
-
-                    void main(void) {
-
-                        float ambient = 0.1;
-
-                        vec3 normal = normalize(vNormal);
-                        vec3 lightDir = normalize(uLightPos - vVertex);
-                        float diffuse = max(dot(normal, lightDir), 0.0);
-
-                        float specularStrength = 0.5;
-                        vec3 viewDir = normalize(uViewPos - vVertex);
-                        vec3 reflectDir = reflect(-lightDir, normal);
-                        float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
-                        float lightIntensity = ambient + diffuse + specular;
-
-                        vec3 color = uPlanColor * uLightColor * lightIntensity;
-
-                        gl_FragColor = vec4(color, 1.0);
-                    }
-                </script>
-    </head>
-    <body>
-    <div id="container">
-        <div id="canvas">
-            <canvas id="glcanvas"></canvas>
-        </div>
-        <div id="overlay">
-            <h1>Cel Shading</h1>
-            <p>
-
-            </p>
-        </div>
+                void main()
+                {
+                    gl_Position = uLightSpaceMatrix * uModel * vec4(aVertexPosition, 1.0);
+                    float zBuf=aVertexPosition.z;
+                    vDepth=0.5+zBuf*0.5;
+                }
+            </script>
+            <script id="shadow-shader-fs" type="x-shader/x-fragment">
+                precision mediump float;
+                varying float vDepth;
+                void main()
+                {
+                    gl_FragColor = vec4(vDepth, 0.0,0.0,1.0);
+                }
+            </script>
+</head>
+<body>
+<div id="container">
+    <div id="canvas">
+        <canvas id="glcanvas"></canvas>
     </div>
+    <div id="overlay">
+        <h1>Cel Shading</h1>
+        <p>
 
-  </body>
+        </p>
+    </div>
+</div>
+
+</body>
 
 </html>

@@ -13,8 +13,8 @@ window.onload = function() {
     var gl=null;
 
     try {
-        gl = WebGLDebugUtils.makeDebugContext(canvas.getContext("webgl"));
-
+        gl = WebGLDebugUtils.makeDebugContext(canvas.getContext("experimental-webgl", {antialias: true}));
+        var ext = GL.getExtension("OES_element_index_uint") ||  GL.getExtension("MOZ_OES_element_index_uint") ||  GL.getExtension("WEBKIT_OES_element_index_uint");
         var displayWidth = document.getElementById('container').clientWidth;
         var displayHeight = document.getElementById('container').clientHeight;
 

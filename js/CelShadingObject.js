@@ -56,9 +56,7 @@ class CelShadingObject {
         }
 
         this.prgOutLine.vertexPositionAttribute = this.gl.getAttribLocation(this.prgOutLine, 'aVertexPosition');
-        this.gl.enableVertexAttribArray(this.prgOutLine.vertexPositionAttribute);
         this.prgOutLine.vertexNormalAttribute = this.gl.getAttribLocation(this.prgOutLine, 'aVertexNormal');
-        this.gl.enableVertexAttribArray(this.prgOutLine.vertexNormalAttribute);
         this.prgOutLine.pMatrixUniform = this.gl.getUniformLocation(this.prgOutLine, 'uPMatrix');
         this.prgOutLine.mvMatrixUniform = this.gl.getUniformLocation(this.prgOutLine, 'uMVMatrix');
         this.prgOutLine.offsetUniform = this.gl.getUniformLocation(this.prgOutLine, 'uOffset');
@@ -66,9 +64,7 @@ class CelShadingObject {
 
 
         this.prgCel.vertexPositionAttribute = this.gl.getAttribLocation(this.prgCel, 'aVertexPosition');
-        this.gl.enableVertexAttribArray(this.prgCel.vertexPositionAttribute);
         this.prgCel.vertexNormalAttribute = this.gl.getAttribLocation(this.prgCel, 'aVertexNormal');
-        this.gl.enableVertexAttribArray(this.prgCel.vertexNormalAttribute);
         //this.prgCel.textureCoordAttribute = gl.getAttribLocation(this.prgCel, 'aTextureCoord');
         //gl.enableVertexAttribArray(this.prgCel.textureCoordAttribute);
         this.prgCel.pMatrixUniform = this.gl.getUniformLocation(this.prgCel, 'uPMatrix');
@@ -101,7 +97,7 @@ class CelShadingObject {
 
         var request = new XMLHttpRequest();
         console.info('Requesting ' + this.fileName);
-        request.open("GET", this.fileName);
+        request.open("GET", this.fileName,true );
         request.onreadystatechange = function () {
             if (request.readyState == 4) {
 
@@ -137,7 +133,7 @@ class CelShadingObject {
 
         this.indexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(obj.indices), this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(obj.indices), this.gl.STATIC_DRAW);
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 
         this.readyToDraw = true;
@@ -163,6 +159,9 @@ class CelShadingObject {
             this.gl.cullFace(this.gl.FRONT);
             this.gl.useProgram(this.prgOutLine);
 
+            this.gl.enableVertexAttribArray(this.prgOutLine.vertexPositionAttribute);
+            this.gl.enableVertexAttribArray(this.prgOutLine.vertexNormalAttribute);
+
             this.gl.uniformMatrix4fv(this.prgOutLine.pMatrixUniform, false, pMatrix);
             this.gl.uniformMatrix4fv(this.prgOutLine.mvMatrixUniform, false, this.mvMatrix);
 
@@ -177,10 +176,16 @@ class CelShadingObject {
 
             this.gl.drawElements(this.gl.TRIANGLES, this.numberIndex, this.gl.UNSIGNED_SHORT, 0);
 
+            this.gl.disableVertexAttribArray(this.prgOutLine.vertexPositionAttribute);
+            this.gl.disableVertexAttribArray(this.prgOutLine.vertexNormalAttribute);
+
             this.gl.disable(this.gl.CULL_FACE);
 
 
             this.gl.useProgram(this.prgCel);
+
+            this.gl.enableVertexAttribArray(this.prgCel.vertexPositionAttribute);
+            this.gl.enableVertexAttribArray(this.prgCel.vertexNormalAttribute);
 
             this.gl.uniformMatrix4fv(this.prgCel.pMatrixUniform, false, pMatrix);
             this.gl.uniformMatrix4fv(this.prgCel.mvMatrixUniform, false, this.mvMatrix);
@@ -192,7 +197,6 @@ class CelShadingObject {
             this.gl.uniform3fv(this.prgCel.viewPositionUniform, [0.0,0.0,0.0]);
 
             //gl.uniform1i(this.prgCel.celShadingUniform, celShading);
-
 
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
             this.gl.vertexAttribPointer(this.prgCel.vertexPositionAttribute, 3, this.gl.FLOAT, false, 0, 0);
@@ -210,7 +214,25 @@ class CelShadingObject {
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 
             this.gl.drawElements(this.gl.TRIANGLES, this.numberIndex, this.gl.UNSIGNED_SHORT, 0);
+
+            this.gl.disableVertexAttribArray(this.prgCel.vertexPositionAttribute);
+            this.gl.disableVertexAttribArray(this.prgCel.vertexNormalAttribute);
         }
 
+    }
+
+    shadow(shadowPrg,gl){
+        if (this.readyToDraw) {
+            var teapotMat = mat4.create();
+            mat4.rotateY(teapotMat, teapotMat, this.i*0.01);
+
+            gl.uniformMatrix4fv(shadowPrg.modelUniform, false,teapotMat);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+            gl.vertexAttribPointer(shadowPrg.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            gl.drawElements(gl.TRIANGLES, this.numberIndex, gl.UNSIGNED_SHORT, 0);
+        }
     }
 }

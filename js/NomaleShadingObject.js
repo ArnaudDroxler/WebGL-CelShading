@@ -2,7 +2,6 @@
 class NomaleShadingObject {
     constructor(fileName, gl) {
         this.fileName = fileName;
-
         this.gl = gl;
 
         this.vertexBuffer = null;
@@ -37,9 +36,7 @@ class NomaleShadingObject {
         }
 
         this.prg.vertexPositionAttribute = this.gl.getAttribLocation(this.prg, 'aVertexPosition');
-        this.gl.enableVertexAttribArray(this.prg.vertexPositionAttribute);
         this.prg.vertexNormalAttribute = this.gl.getAttribLocation(this.prg, 'aVertexNormal');
-        this.gl.enableVertexAttribArray(this.prg.vertexNormalAttribute);
         this.prg.pMatrixUniform = this.gl.getUniformLocation(this.prg, 'uPMatrix');
         this.prg.mvMatrixUniform = this.gl.getUniformLocation(this.prg, 'uMVMatrix');
         this.prg.nMatrixUniform = this.gl.getUniformLocation(this.prg, 'uNMatrix');
@@ -55,7 +52,7 @@ class NomaleShadingObject {
         var me = this;
         var request = new XMLHttpRequest();
         console.info('Requesting ' + this.fileName);
-        request.open("GET", this.fileName);
+        request.open("GET", this.fileName, true);
         request.onreadystatechange = function () {
             if (request.readyState == 4) {
 
@@ -85,10 +82,11 @@ class NomaleShadingObject {
 
         this.indexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(obj.indices), this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(obj.indices), this.gl.STATIC_DRAW);
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 
         this.readyToDraw = true;
+
     }
 
 
@@ -102,6 +100,8 @@ class NomaleShadingObject {
             mat3.normalFromMat4(this.nMatrix, this.mvMatrix);
 
             this.gl.useProgram(this.prg);
+            this.gl.enableVertexAttribArray(this.prg.vertexPositionAttribute);
+            this.gl.enableVertexAttribArray(this.prg.vertexNormalAttribute);
 
             this.gl.uniform3fv(this.prg.planColorUniform, PLANCOLOR);
             this.gl.uniform3fv(this.prg.lightPosUniform, LIGHTPOS);
@@ -121,7 +121,30 @@ class NomaleShadingObject {
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 
             this.gl.drawElements(this.gl.TRIANGLES, this.numberIndex, this.gl.UNSIGNED_SHORT, 0);
+
+            this.gl.disableVertexAttribArray(this.prg.vertexPositionAttribute);
+            this.gl.disableVertexAttribArray(this.prg.vertexNormalAttribute);
+
         }
 
+    }
+
+    shadow(shadowPrg,gl){
+        if (this.readyToDraw) {
+            var planMat = mat4.create();
+            mat4.translate(planMat, planMat, [0.0, -10.0, 0.0]);
+
+            gl.uniformMatrix4fv(shadowPrg.modelUniform, false, planMat);
+
+
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+            gl.vertexAttribPointer(shadowPrg.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            gl.drawElements(gl.TRIANGLES, this.numberIndex, gl.UNSIGNED_SHORT, 0);
+
+
+        }
     }
 }

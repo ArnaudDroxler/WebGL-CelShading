@@ -4,16 +4,24 @@ class Scene{
 
         this.gl = gl;
         this.canvas = canvas;
-        this.skybox = new Skybox("textures/skybox/",this.gl);
+        //this.skybox = new Skybox("textures/skybox/",this.gl);
+
         this.teapot = new CelShadingObject("model/teapot.json",this.gl);
 
         this.plan = new NomaleShadingObject("model/plan.json",this.gl);
-        this.front = new NomaleShadingObject("model/plan.json",this.gl);
-        this.left = new NomaleShadingObject("model/plan.json",this.gl);
-        this.right = new NomaleShadingObject("model/plan.json",this.gl);
+
+        this.shadow = new Shadow(this.gl,this.plan, this.teapot);
+
+        //this.front = new NomaleShadingObject("model/plan.json",this.gl);
+        //this.left = new NomaleShadingObject("model/plan.json",this.gl);
+        //this.right = new NomaleShadingObject("model/plan.json",this.gl);
 
         this.mvMatrix = mat4.create();
         this.pMatrix = mat4.create();
+
+        this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.depthFunc(this.gl.LEQUAL);
+        this.gl.clearDepth(1.0);
 
         this.tick();
 
@@ -22,6 +30,7 @@ class Scene{
     tick() {
         var self = this;
         requestAnimFrame(function() { self.tick(); } );
+
         this.resizeCanvas();
         this.teapot.animate();
         this.drawScene();
@@ -29,10 +38,12 @@ class Scene{
 
     drawScene(){
         //console.log("draw Call");
-        this.gl.clearColor(0.2, 0.2, 0.2, 1.0);
+        //this.shadow.draw();
 
-        this.gl.enable(this.gl.DEPTH_TEST);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        //this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+
+        this.gl.clearColor(0.2, 0.2, 0.2, 1.0);
+        this.gl.clear( this.gl.COLOR_BUFFER_BIT |  this.gl.DEPTH_BUFFER_BIT);
         this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
 
         mat4.identity(this.pMatrix);
@@ -72,6 +83,7 @@ class Scene{
 
         this.teapot.draw(this.mvMatrix,this.pMatrix);
 
+        this.gl.flush();
     }
 
     resizeCanvas() {
