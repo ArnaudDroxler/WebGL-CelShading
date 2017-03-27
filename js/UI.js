@@ -1,6 +1,0 @@
-
-class UI{
-    constructor(){
-
-    }
-}

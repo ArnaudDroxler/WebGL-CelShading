@@ -2,7 +2,7 @@
 const LIGHTPOS = vec3.fromValues(20.0,20.0,20.0);
 const LIGHTCOLOR = vec3.fromValues(1.0,1.0,1.0);
 
-const OFFSET = 0.3;
+const OFFSET = 0.2;
 const OUTLINECOLOR = vec3.fromValues(0.0,0.0,0.0);
 const CELCOLOR = vec3.fromValues(1.0,0.6,0.1);
 
@@ -50,9 +50,6 @@ window.onload = function() {
         gl = WebGLDebugUtils.makeDebugContext(canvas.getContext("experimental-webgl", {antialias: true}));
         var uint = gl.getExtension("OES_element_index_uint");
         var depth =  gl.getExtension("WEBGL_depth_texture");
-        if(!depth) {
-            console.log("errore ");
-        }
         var displayWidth = document.getElementById('container').clientWidth;
         var displayHeight = document.getElementById('container').clientHeight;
 
@@ -75,13 +72,11 @@ function init(){
     initProgramme();
     loadModelAndInitBuffer();
     initMatrix();
-
     tick();
 }
 
 function tick() {
     requestAnimFrame(tick);
-
     resizeCanvas();
     animate();
     drawScene();
@@ -139,12 +134,6 @@ function initProgramme(){
     prgPlan.lightColorUniform = gl.getUniformLocation(prgPlan, 'uLightColor');
     prgPlan.planColorUniform = gl.getUniformLocation(prgPlan, 'uPlanColor');
     prgPlan.samplerShadowMapUniform = gl.getUniformLocation(prgPlan, 'uSamplerShadow');
-
-  /*  gl.useProgram(prgPlan);
-    gl.uniform1i(_sampler, 0);
-    gl.uniform1i(_samplerShadowMap, 1);
-    var LIGHTDIR=[0.58,0.58,-0.58];
-    gl.uniform3fv(_lightDirection, LIGHTDIR);*/
 
     /*
      * OutLine Programme
@@ -207,7 +196,7 @@ function loadModelAndInitBuffer(){
 
     var teapot  = "model/teapot.json";
     var request = new XMLHttpRequest();
-    console.info('Requesting ' + teapot);
+    //console.info('Requesting ' + teapot);
     request.open("GET", teapot, false);
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
@@ -243,7 +232,7 @@ function loadModelAndInitBuffer(){
 
     var plan  = "model/plan.json";
     var request = new XMLHttpRequest();
-    console.info('Requesting ' + plan);
+    //console.info('Requesting ' + plan);
     request.open("GET", plan, false);
     request.onreadystatechange = function () {
         if (request.readyState == 4) {
@@ -308,15 +297,19 @@ function initMatrix(){
     mat4.translate(vMatrix, vMatrix, [0.0, -2.0, -40.0]);
     mat4.rotateX(vMatrix, vMatrix, 0.3);
 
-
+    /*
+     * Light Matrix
+     */
     mat4.ortho(lightProjection,-30.0,30.0,-30.0,30.0,0.1,100.0);
     mat4.lookAt(lightView,LIGHTPOS,[0.0,0.0,0.0],[0.0,1.0,0.0]);
     mat4.multiply(lightSpaceMatrix,lightProjection,lightView);
 }
 
 function drawScene(){
-    //console.log("Draw Call");
 
+    /*
+     * Shadow Rendering
+     */
     gl.cullFace(gl.FRONT);
     gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFrameBuffer);
     gl.useProgram(prgShadow);
@@ -353,7 +346,9 @@ function drawScene(){
 
     gl.disableVertexAttribArray(prgShadow.vertexPositionAttribute);
 
-
+    /*
+     * Teapot Rendering
+     */
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
@@ -430,6 +425,9 @@ function drawScene(){
     gl.disableVertexAttribArray(prgCel.vertexPositionAttribute);
     gl.disableVertexAttribArray(prgCel.vertexNormalAttribute);
 
+    /*
+     * Plan Rendering
+     */
 
     gl.useProgram(prgPlan);
     gl.enableVertexAttribArray(prgPlan.vertexPositionAttribute);
