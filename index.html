@@ -8,265 +8,205 @@
             <script type="text/javascript" src="./js/webgl-debug.js"></script>
             <script type="text/javascript" src="./js/webgl-utils.js"></script>
             <script type="text/javascript" src="js/celShading.js"></script>
-        <!-- <script type="text/javascript" src="js/Scene.js"></script>-->
-        <!--<script type="text/javascript" src="js/Controller.js"></script>-->
-        <!--<script type="text/javascript" src="js/Skybox.js"></script>-->
-        <!--<script type="text/javascript" src="js/NomaleShadingObject.js"></script>-->
-        <!--<script type="text/javascript" src="js/CelShadingObject.js"></script>-->
-        <!--<script type="text/javascript" src="js/Shadow.js"></script>-->
-        <script id="outline-shader-vs" type="x-shader/x-vertex">
-            attribute vec3 aVertexPosition;
-            attribute vec3 aVertexNormal;
-            uniform mat4 uPMatrix;
-            uniform mat4 uVMatrix;
-            uniform mat4 uMMatrix;
-            uniform float uOffset;
-            void main(void) {
-                gl_Position = uPMatrix * uVMatrix  * uMMatrix *  vec4(aVertexPosition + aVertexNormal * uOffset, 1.0);
-            }
-        </script>
-        <script id="outline-shader-fs" type="x-shader/x-fragment">
-            precision highp float;
-                uniform vec3 uOutLineColor;
-            void main(void) {
-                gl_FragColor = vec4(uOutLineColor,1.0);
-            }
-        </script>
-        <script id="cel-shader-vs" type="x-shader/x-vertex">
-            attribute vec3 aVertexPosition;
-            attribute vec3 aVertexNormal;
-
-            uniform mat4 uPMatrix;
-            uniform mat4 uVMatrix;
-            uniform mat4 uMMatrix;
-            uniform mat3 uNMatrix;
-            uniform mat4 uLightSpaceMatrix;
-
-            varying vec3 vNormal;
-            varying vec3 vVertex;
-            varying vec4 vVertexLightPos;
-
-            void main(void) {
-                vVertex = vec3(uMMatrix * vec4(aVertexPosition, 1.0));
-                vNormal = uNMatrix * aVertexNormal;
-                vVertexLightPos = uLightSpaceMatrix * vec4(vVertex, 1.0);
-                gl_Position = uPMatrix *  uVMatrix  * uMMatrix * vec4(aVertexPosition, 1.0);
-            }
-
-        </script>
-        <script id="cel-shader-fs" type="x-shader/x-fragment">
-            precision highp float;
-            uniform vec3 uCelColor;
-            uniform vec3 uLightColor;
-            uniform vec3 uViewPos;
-            uniform vec3 uLightPos;
-
-            uniform sampler2D uSamplerShadow;
-
-            varying vec3 vNormal;
-            varying vec3 vVertex;
-            varying vec4 vVertexLightPos;
-
-             float ShadowCalculation(vec4 fragPosLightSpace)
-                {
-
-                    // perform perspective divide
-                    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-                    // Transform to [0,1] range
-                    projCoords = projCoords * 0.5 + 0.5;
-                    // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-                    float closestDepth = texture2D(uSamplerShadow, projCoords.xy).r;
-                    // Get depth of current fragment from light's perspective
-                    float currentDepth = projCoords.z;
-                    // Calculate bias (based on depth map resolution and slope)
-                    vec3 normal = normalize(vNormal);
-                    vec3 lightDir = normalize(uLightPos - vVertex);
-                    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-                    // Check whether current frag pos is in shadow
-                    // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-                    // PCF
-                    float shadow = 0.0;
-                    vec2 texelSize = vec2(1.0 / 1024.0);
-                    for(int x = -1; x <= 1; ++x)
-                    {
-                        for(int y = -1; y <= 1; ++y)
-                        {
-                            float pcfDepth = texture2D(uSamplerShadow, projCoords.xy + vec2(x, y) * texelSize).r;
-                            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;
-                        }
-                    }
-                    shadow /= 9.0;
-
-                    // Keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-                    if(projCoords.z > 1.0)
-                    shadow = 0.0;
-
-                    return shadow;
-
-                }
-
-            void main(void) {
-
-                float ambient = 0.1;
-
-                vec3 normal = normalize(vNormal);
-                vec3 lightDir = normalize(uLightPos - vVertex);
-                float diffuse = max(dot(normal, lightDir), 0.0);
-
-                float specularStrength = 0.5;
-                vec3 viewDir = normalize(uViewPos - vVertex);
-                vec3 reflectDir = reflect(-lightDir, normal);
-                float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
-                float shadow = ShadowCalculation(vVertexLightPos);
-
-                float lightIntensity = (ambient + (1.0 - shadow) *  diffuse + specular);
-
-                lightIntensity = ceil(lightIntensity*4.0)/4.0;
-
-                vec3 color = uCelColor * uLightColor * lightIntensity;
-
-                gl_FragColor = vec4(color, 1.0);
-            }
-
-            </script>
-            <script id="skybox-shader-vs"  type="x-shader/x-vertex">
-                 uniform mat4 uPMatrix;
-                 uniform mat4 uVMatrix;
-                 uniform mat4 uMMatrix;
-                 attribute vec3 aCoords;
-                 varying vec3 vCoords;
-                 void main() {
-                    vCoords = aCoords;
-                    gl_Position = uPMatrix * uVMatrix  * uMMatrix * vec4(aCoords,1.0);;
-
-                 }
-            </script>
-            <script id="skybox-shader-fs"  type="x-shader/x-fragment">
-                 precision mediump float;
-                 varying vec3 vCoords;
-                 uniform samplerCube uSkybox;
-                 void main() {
-                      gl_FragColor = textureCube(uSkybox, vCoords);
-                 }
-            </script>
-            <script id="plan-shader-vs" type="x-shader/x-vertex">
+            <script id="outline-shader-vs" type="x-shader/x-vertex">
                 attribute vec3 aVertexPosition;
                 attribute vec3 aVertexNormal;
-
+                uniform mat4 uPMatrix;
+                uniform mat4 uVMatrix;
+                uniform mat4 uMMatrix;
+                uniform float uOffset;
+                void main(void)
+                {
+                    gl_Position = uPMatrix * uVMatrix  * uMMatrix *  vec4(aVertexPosition + aVertexNormal * uOffset, 1.0);
+                }
+            </script>
+            <script id="outline-shader-fs" type="x-shader/x-fragment">
+                precision highp float;
+                uniform vec3 uOutLineColor;
+                void main(void)
+                {
+                    gl_FragColor = vec4(uOutLineColor,1.0);
+                }
+            </script>
+            <script id="cel-shader-vs" type="x-shader/x-vertex">
+                attribute vec3 aVertexPosition;
+                attribute vec3 aVertexNormal;
                 uniform mat4 uPMatrix;
                 uniform mat4 uVMatrix;
                 uniform mat4 uMMatrix;
                 uniform mat3 uNMatrix;
                 uniform mat4 uLightSpaceMatrix;
-
                 varying vec3 vNormal;
                 varying vec3 vVertex;
                 varying vec4 vVertexLightPos;
 
-                void main(void) {
+                void main(void)
+                {
                     vVertex = vec3(uMMatrix * vec4(aVertexPosition, 1.0));
                     vNormal = uNMatrix * aVertexNormal;
                     vVertexLightPos = uLightSpaceMatrix * vec4(vVertex, 1.0);
-                    gl_Position = uPMatrix * uVMatrix  * uMMatrix * vec4(aVertexPosition, 1.0);
+                    gl_Position = uPMatrix *  uVMatrix  * uMMatrix * vec4(aVertexPosition, 1.0);
                 }
+
             </script>
-            <script id="plan-shader-fs" type="x-shader/x-fragment">
+            <script id="cel-shader-fs" type="x-shader/x-fragment">
                 precision highp float;
-                uniform vec3 uPlanColor;
+                uniform vec3 uCelColor;
                 uniform vec3 uLightColor;
                 uniform vec3 uViewPos;
                 uniform vec3 uLightPos;
-
+                uniform float uNumberCel;
+                uniform bool uActivateCel;
                 uniform sampler2D uSamplerShadow;
-
                 varying vec3 vNormal;
                 varying vec3 vVertex;
                 varying vec4 vVertexLightPos;
 
-                float ShadowCalculation(vec4 fragPosLightSpace)
+                 float ShadowCalculation(vec4 fragPosLightSpace)
+                    {
+                        vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+                        projCoords = projCoords * 0.5 + 0.5;
+                        float closestDepth = texture2D(uSamplerShadow, projCoords.xy).r;
+                        float currentDepth = projCoords.z;
+                        vec3 normal = normalize(vNormal);
+                        vec3 lightDir = normalize(uLightPos - vVertex);
+                        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+                        float shadow = 0.0;
+                        vec2 texelSize = vec2(1.0 / 1024.0);
+                        for(int x = -1; x <= 1; ++x)
+                        {
+                            for(int y = -1; y <= 1; ++y)
+                            {
+                                float pcfDepth = texture2D(uSamplerShadow, projCoords.xy + vec2(x, y) * texelSize).r;
+                                shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;
+                            }
+                        }
+                        shadow /= 9.0;
+                        if(projCoords.z > 1.0){
+                            shadow = 0.0;
+                        }
+                        return shadow;
+                    }
+
+                void main(void)
                 {
-
-                    // perform perspective divide
-                    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-                    // Transform to [0,1] range
-                    projCoords = projCoords * 0.5 + 0.5;
-                    // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-                    float closestDepth = texture2D(uSamplerShadow, projCoords.xy).r;
-                    // Get depth of current fragment from light's perspective
-                    float currentDepth = projCoords.z;
-                    // Calculate bias (based on depth map resolution and slope)
-                    vec3 normal = normalize(vNormal);
-                    vec3 lightDir = normalize(uLightPos - vVertex);
-                    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-                    // Check whether current frag pos is in shadow
-                    // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-                    // PCF
-                    float shadow = 0.0;
-                    vec2 texelSize = vec2(1.0 / 1024.0);
-                    for(int x = -1; x <= 1; ++x)
-                    {
-                    for(int y = -1; y <= 1; ++y)
-                    {
-                    float pcfDepth = texture2D(uSamplerShadow, projCoords.xy + vec2(x, y) * texelSize).r;
-                    shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;
-                    }
-                    }
-                    shadow /= 9.0;
-
-                    // Keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-                    if(projCoords.z > 1.0)
-                    shadow = 0.0;
-
-                    return shadow;
-
-                }
-
-                void main(void) {
-
                     float ambient = 0.1;
-
                     vec3 normal = normalize(vNormal);
                     vec3 lightDir = normalize(uLightPos - vVertex);
                     float diffuse = max(dot(normal, lightDir), 0.0);
-
                     float specularStrength = 0.5;
                     vec3 viewDir = normalize(uViewPos - vVertex);
                     vec3 reflectDir = reflect(-lightDir, normal);
                     float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-
                     float shadow = ShadowCalculation(vVertexLightPos);
-
-                    float lightIntensity = (ambient + (1.0 - shadow) * diffuse );
-
-                    vec3 color = uPlanColor * uLightColor * lightIntensity;
-
+                    float lightIntensity = (ambient + (1.0 - shadow) *  diffuse + specular);
+                    if(uActivateCel){
+                        lightIntensity = ceil(lightIntensity*uNumberCel)/uNumberCel;
+                    }
+                    vec3 color = uCelColor * uLightColor * lightIntensity;
                     gl_FragColor = vec4(color, 1.0);
                 }
-            </script>
-            <script id="shadow-shader-vs" type="x-shader/x-vertex">
 
-                attribute vec3 aVertexPosition;
-                uniform mat4 uLightSpaceMatrix;
-                uniform mat4 uMMatrix;
-                varying float vDepth;
+                </script>
+                <script id="plan-shader-vs" type="x-shader/x-vertex">
+                    attribute vec3 aVertexPosition;
+                    attribute vec3 aVertexNormal;
 
-                void main()
-                {
-                    vec4 position = uLightSpaceMatrix * uMMatrix* vec4(aVertexPosition, 1.);
-                    float zBuf=position.z/position.w;
-                    vDepth=0.5+zBuf*0.5;
-                    gl_Position=position;
-                }
-            </script>
-            <script id="shadow-shader-fs" type="x-shader/x-fragment">
-                precision mediump float;
-                varying float vDepth;
-                void main()
-                {
-                    gl_FragColor = vec4(vDepth,0.,0.,1.);
-                }
-            </script>
+                    uniform mat4 uPMatrix;
+                    uniform mat4 uVMatrix;
+                    uniform mat4 uMMatrix;
+                    uniform mat3 uNMatrix;
+                    uniform mat4 uLightSpaceMatrix;
+
+                    varying vec3 vNormal;
+                    varying vec3 vVertex;
+                    varying vec4 vVertexLightPos;
+
+                    void main(void)
+                    {
+                        vVertex = vec3(uMMatrix * vec4(aVertexPosition, 1.0));
+                        vNormal = uNMatrix * aVertexNormal;
+                        vVertexLightPos = uLightSpaceMatrix * vec4(vVertex, 1.0);
+                        gl_Position = uPMatrix * uVMatrix  * uMMatrix * vec4(aVertexPosition, 1.0);
+                    }
+                </script>
+                <script id="plan-shader-fs" type="x-shader/x-fragment">
+                    precision highp float;
+                    uniform vec3 uPlanColor;
+                    uniform vec3 uLightColor;
+                    uniform vec3 uViewPos;
+                    uniform vec3 uLightPos;
+
+                    uniform sampler2D uSamplerShadow;
+
+                    varying vec3 vNormal;
+                    varying vec3 vVertex;
+                    varying vec4 vVertexLightPos;
+
+                    float ShadowCalculation(vec4 fragPosLightSpace)
+                    {
+                        vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+                        projCoords = projCoords * 0.5 + 0.5;
+                        float closestDepth = texture2D(uSamplerShadow, projCoords.xy).r;
+                        float currentDepth = projCoords.z;
+                        vec3 normal = normalize(vNormal);
+                        vec3 lightDir = normalize(uLightPos - vVertex);
+                        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+                        float shadow = 0.0;
+                        vec2 texelSize = vec2(1.0 / 1024.0);
+                        for(int x = -1; x <= 1; ++x)
+                        {
+                            for(int y = -1; y <= 1; ++y)
+                            {
+                                float pcfDepth = texture2D(uSamplerShadow, projCoords.xy + vec2(x, y) * texelSize).r;
+                                shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;
+                            }
+                        }
+                        shadow /= 9.0;
+                        if(projCoords.z > 1.0){
+                            shadow = 0.0;
+                        }
+                        return shadow;
+                    }
+
+                    void main(void)
+                    {
+                        float ambient = 0.1;
+                        vec3 normal = normalize(vNormal);
+                        vec3 lightDir = normalize(uLightPos - vVertex);
+                        float diffuse = max(dot(normal, lightDir), 0.0);
+                        float specularStrength = 0.5;
+                        vec3 viewDir = normalize(uViewPos - vVertex);
+                        vec3 reflectDir = reflect(-lightDir, normal);
+                        float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+                        float shadow = ShadowCalculation(vVertexLightPos);
+                        float lightIntensity = (ambient + (1.0 - shadow) * diffuse );
+                        vec3 color = uPlanColor * uLightColor * lightIntensity;
+                        gl_FragColor = vec4(color, 1.0);
+                    }
+                </script>
+                <script id="shadow-shader-vs" type="x-shader/x-vertex">
+                    attribute vec3 aVertexPosition;
+                    uniform mat4 uLightSpaceMatrix;
+                    uniform mat4 uMMatrix;
+                    varying float vDepth;
+
+                    void main()
+                    {
+                        vec4 position = uLightSpaceMatrix * uMMatrix* vec4(aVertexPosition, 1.);
+                        float zBuf=position.z/position.w;
+                        vDepth=0.5+zBuf*0.5;
+                        gl_Position=position;
+                    }
+                </script>
+                <script id="shadow-shader-fs" type="x-shader/x-fragment">
+                    precision mediump float;
+                    varying float vDepth;
+                    void main()
+                    {
+                        gl_FragColor = vec4(vDepth,0.,0.,1.);
+                    }
+                </script>
 </head>
 <body>
 <div id="container">
@@ -276,7 +216,12 @@
     <div id="overlay">
         <h1>Cel Shading</h1>
         <p>
-
+        <form>
+            <input type="radio" name="celType" value="normal-cel-shading" checked onclick="changeCelMode(this)"> Normal <br>
+            <input type="radio" name="celType" value="thick-cel-shading" onclick="changeCelMode(this)"> Thick <br>
+            <input type="radio" name="celType" value="thin-cel-shading" onclick="changeCelMode(this)"> Thin <br>
+            <input type="radio" name="celType" value="disable-cel-shading" onclick="changeCelMode(this)"> Disable<br>
+        </form>
         </p>
     </div>
 </div>

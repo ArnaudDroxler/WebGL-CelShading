@@ -2,7 +2,7 @@
 const LIGHTPOS = vec3.fromValues(20.0,20.0,20.0);
 const LIGHTCOLOR = vec3.fromValues(1.0,1.0,1.0);
 
-const OFFSET = 0.2;
+var offset = 0.2;
 const OUTLINECOLOR = vec3.fromValues(0.0,0.0,0.0);
 const CELCOLOR = vec3.fromValues(1.0,0.6,0.1);
 
@@ -42,6 +42,8 @@ var shadowWidth = 1024;
 var shadowHeight = 1024;
 
 var i = 0;
+var numberOfCel = 4.0;
+var activateCelShading = true;
 
 window.onload = function() {
     canvas = document.getElementById('glcanvas');
@@ -189,6 +191,9 @@ function initProgramme(){
     prgCel.lightColorUniform = gl.getUniformLocation(prgCel, 'uLightColor');
     prgCel.celColorUniform = gl.getUniformLocation(prgCel, 'uCelColor');
     prgCel.samplerShadowMapUniform = gl.getUniformLocation(prgCel, 'uSamplerShadow');
+    prgCel.numberCelUniform = gl.getUniformLocation(prgCel, 'uNumberCel');
+    prgCel.activateCelUniform = gl.getUniformLocation(prgCel, 'uActivateCel');
+
 
 }
 
@@ -356,38 +361,41 @@ function drawScene(){
     gl.clear( gl.COLOR_BUFFER_BIT |  gl.DEPTH_BUFFER_BIT);
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
-    gl.enable(gl.CULL_FACE);
-    gl.cullFace(gl.FRONT);
-    gl.useProgram(prgOutLine);
-
-    gl.enableVertexAttribArray(prgOutLine.vertexPositionAttribute);
-    gl.enableVertexAttribArray(prgOutLine.vertexNormalAttribute);
-
-
     mat4.identity(mMatrix);
     mat4.rotateY(mMatrix, mMatrix, i*0.01);
 
     mat3.normalFromMat4(nMatrix, mMatrix);
 
-    gl.uniformMatrix4fv(prgOutLine.pMatrixUniform, false, pMatrix);
-    gl.uniformMatrix4fv(prgOutLine.vMatrixUniform, false, vMatrix);
-    gl.uniformMatrix4fv(prgOutLine.mMatrixUniform, false, mMatrix);
+    if(activateCelShading){
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.FRONT);
 
-    gl.uniform1f(prgOutLine.offsetUniform, OFFSET);
-    gl.uniform3fv(prgOutLine.outLineColor, OUTLINECOLOR);
+        gl.useProgram(prgOutLine);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexBuffer);
-    gl.vertexAttribPointer(prgOutLine.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, teapotNormalBuffer);
-    gl.vertexAttribPointer(prgOutLine.vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotIndexBuffer);
+        gl.enableVertexAttribArray(prgOutLine.vertexPositionAttribute);
+        gl.enableVertexAttribArray(prgOutLine.vertexNormalAttribute);
 
-    gl.drawElements(gl.TRIANGLES, teapotNumberIndex, gl.UNSIGNED_INT, 0);
+        gl.uniformMatrix4fv(prgOutLine.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(prgOutLine.vMatrixUniform, false, vMatrix);
+        gl.uniformMatrix4fv(prgOutLine.mMatrixUniform, false, mMatrix);
 
-    gl.disableVertexAttribArray(prgOutLine.vertexPositionAttribute);
-    gl.disableVertexAttribArray(prgOutLine.vertexNormalAttribute);
+        gl.uniform1f(prgOutLine.offsetUniform, offset);
+        gl.uniform3fv(prgOutLine.outLineColor, OUTLINECOLOR);
 
-    gl.disable(gl.CULL_FACE);
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexBuffer);
+        gl.vertexAttribPointer(prgOutLine.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotNormalBuffer);
+        gl.vertexAttribPointer(prgOutLine.vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotIndexBuffer);
+
+        gl.drawElements(gl.TRIANGLES, teapotNumberIndex, gl.UNSIGNED_INT, 0);
+
+        gl.disableVertexAttribArray(prgOutLine.vertexPositionAttribute);
+        gl.disableVertexAttribArray(prgOutLine.vertexNormalAttribute);
+
+        gl.disable(gl.CULL_FACE);
+    }
+
 
 
     gl.useProgram(prgCel);
@@ -401,11 +409,12 @@ function drawScene(){
     gl.uniformMatrix3fv(prgCel.nMatrixUniform, false, nMatrix);
     gl.uniformMatrix4fv(prgCel.lightSpaceMatrixUniform, false, lightSpaceMatrix);
 
-
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, depthMapTexture);
     gl.uniform1i(prgCel.samplerShadowMapUniform, 1);
 
+    gl.uniform1f(prgCel.numberCelUniform, numberOfCel);
+    gl.uniform1i(prgCel.activateCelUniform, activateCelShading);
 
     gl.uniform3fv(prgCel.lightPosUniform, LIGHTPOS);
     gl.uniform3fv(prgCel.lightColorUniform, LIGHTCOLOR);
@@ -483,6 +492,30 @@ function resizeCanvas() {
         gl.viewportHeight = displayHeight;
         canvas.width = displayWidth;
         canvas.height = displayHeight;
+    }
+}
+
+function changeCelMode(radio) {
+    switch(radio.value) {
+        case "normal-cel-shading":
+            activateCelShading = true;
+            numberOfCel = 4.0;
+            offset = 0.25;
+            break;
+        case "thick-cel-shading":
+            activateCelShading = true;
+            numberOfCel = 3.0;
+            offset = 0.4;
+            break;
+        case "thin-cel-shading":
+            activateCelShading = true;
+            numberOfCel = 8.0;
+            offset = 0.2;
+            break;
+        case "disable-cel-shading":
+            activateCelShading = false;
+            numberOfCel = 0.0;
+            break;
     }
 }
 function degToRad(degrees) {
