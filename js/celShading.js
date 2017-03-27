@@ -509,7 +509,7 @@ function changeCelMode(radio) {
             break;
         case "thin-cel-shading":
             activateCelShading = true;
-            numberOfCel = 8.0;
+            numberOfCel = 6.0;
             offset = 0.2;
             break;
         case "disable-cel-shading":
