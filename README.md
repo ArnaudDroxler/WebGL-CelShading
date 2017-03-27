@@ -1,2 +1,2 @@
-# WebGL-PathTracing
-WebGl Path Tracing
+# WebGL-CelShading
+WebGl Cel Shading
