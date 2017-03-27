@@ -45,7 +45,6 @@ class NomaleShadingObject {
         this.prg.lightColorUniform = this.gl.getUniformLocation(this.prg, 'uLightColor');
         this.prg.planColorUniform = this.gl.getUniformLocation(this.prg, 'uPlanColor');
 
-
     }
 
     load() {
