@@ -1,2 +1,2 @@
 # WebGL-CelShading
-WebGl Cel Shading
+Try it https://arnauddroxler.github.io/WebGL-CelShading/
