@@ -1,12 +1,12 @@
 
-const LIGHTPOS = vec3.fromValues(20.0,20.0,20.0);
-const LIGHTCOLOR = vec3.fromValues(1.0,1.0,1.0);
+var lightPos = vec3.fromValues(20.0,20.0,20.0);
+var lightColor = vec3.fromValues(1.0,1.0,1.0);
 
 var offset = 0.2;
-const OUTLINECOLOR = vec3.fromValues(0.0,0.0,0.0);
-const CELCOLOR = vec3.fromValues(1.0,0.6,0.1);
+var outLineColor = vec3.fromValues(0.0,0.0,0.0);
+var celColor = vec3.fromValues(1.0,0.6,0.1);
 
-const PLANCOLOR = vec3.fromValues(0.9,0.9,0.9);
+var planColor = vec3.fromValues(0.9,0.9,0.9);
 
 var canvas = null;
 var gl = null;
@@ -44,6 +44,7 @@ var shadowHeight = 1024;
 var i = 0;
 var numberOfCel = 4.0;
 var activateCelShading = true;
+var activateSwapColor = false;
 
 window.onload = function() {
     canvas = document.getElementById('glcanvas');
@@ -306,7 +307,7 @@ function initMatrix(){
      * Light Matrix
      */
     mat4.ortho(lightProjection,-30.0,30.0,-30.0,30.0,0.1,100.0);
-    mat4.lookAt(lightView,LIGHTPOS,[0.0,0.0,0.0],[0.0,1.0,0.0]);
+    mat4.lookAt(lightView,lightPos,[0.0,0.0,0.0],[0.0,1.0,0.0]);
     mat4.multiply(lightSpaceMatrix,lightProjection,lightView);
 }
 
@@ -380,7 +381,7 @@ function drawScene(){
         gl.uniformMatrix4fv(prgOutLine.mMatrixUniform, false, mMatrix);
 
         gl.uniform1f(prgOutLine.offsetUniform, offset);
-        gl.uniform3fv(prgOutLine.outLineColor, OUTLINECOLOR);
+        gl.uniform3fv(prgOutLine.outLineColor, outLineColor);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexBuffer);
         gl.vertexAttribPointer(prgOutLine.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
@@ -416,9 +417,9 @@ function drawScene(){
     gl.uniform1f(prgCel.numberCelUniform, numberOfCel);
     gl.uniform1i(prgCel.activateCelUniform, activateCelShading);
 
-    gl.uniform3fv(prgCel.lightPosUniform, LIGHTPOS);
-    gl.uniform3fv(prgCel.lightColorUniform, LIGHTCOLOR);
-    gl.uniform3fv(prgCel.celColorUniform, CELCOLOR);
+    gl.uniform3fv(prgCel.lightPosUniform, lightPos);
+    gl.uniform3fv(prgCel.lightColorUniform, lightColor);
+    gl.uniform3fv(prgCel.celColorUniform, celColor);
     gl.uniform3fv(prgCel.viewPositionUniform, [0.0,0.0,0.0]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexBuffer);
@@ -450,9 +451,9 @@ function drawScene(){
     gl.bindTexture(gl.TEXTURE_2D, depthMapTexture);
     gl.uniform1i(prgPlan.samplerShadowMapUniform, 1);
 
-    gl.uniform3fv(prgPlan.planColorUniform, PLANCOLOR);
-    gl.uniform3fv(prgPlan.lightPosUniform, LIGHTPOS);
-    gl.uniform3fv(prgPlan.lightColorUniform, LIGHTCOLOR);
+    gl.uniform3fv(prgPlan.planColorUniform, planColor);
+    gl.uniform3fv(prgPlan.lightPosUniform, lightPos);
+    gl.uniform3fv(prgPlan.lightColorUniform, lightColor);
     gl.uniform3fv(prgPlan.viewPositionUniform, [0.0,0.0,0.0]);
 
     gl.uniformMatrix4fv(prgPlan.pMatrixUniform, false, pMatrix);
@@ -481,6 +482,13 @@ function animate() {
     if(i == 630){
         i = 0;
     }
+
+    if(activateSwapColor){
+        var color = HSVtoRGB(i/630.0,0.9,0.9);
+        celColor = vec3.fromValues(color.r,color.g,color.b);
+    }
+
+
 }
 
 function resizeCanvas() {
@@ -518,6 +526,10 @@ function changeCelMode(radio) {
             break;
     }
 }
+
+function enableSwapColor() {
+    activateSwapColor = activateSwapColor == true ? false : true;
+}
 function degToRad(degrees) {
     return (degrees * Math.PI / 180.0);
 }
@@ -553,5 +565,30 @@ function getShader(id) {
         return null;
     }
     return shader;
+}
+
+function HSVtoRGB(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+        r: r,
+        g: g ,
+        b: b
+    };
 }
 
